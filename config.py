@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Locally you can put them in a .env file or system environment variables.
 CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "dnoepbfbr")
 CLOUDINARY_API_KEY    = os.environ.get("CLOUDINARY_API_KEY",    "393756212248257")
-CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
+CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "66zA0Je4c0SKqaDcbCglsxPpYGI")
 
 # ── Local asset paths ────────────────────────────────────────────────────────
 LOGO_PATH          = os.path.join(BASE_DIR, "assets", "logo.png")
