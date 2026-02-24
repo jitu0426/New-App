@@ -276,7 +276,7 @@ html, body {{
 
 /* ── Cover page ── */
 .cover-page {{
-  width:210mm !important; height:260mm !important;
+  width:210mm !important; height:297mm !important;
   display:block !important; position:relative !important;
   margin:0 !important; padding:0 !important; overflow:hidden !important;
   page-break-after:always !important;
