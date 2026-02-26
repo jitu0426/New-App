@@ -311,7 +311,9 @@ html, body {{
   border-top:none !important; border-left:none !important; border-right:none !important;
   margin-top:6mm !important; clear:both !important;
   font-family:Georgia,serif !important;
-  page-break-inside:avoid !important; width:100% !important;
+  page-break-inside:avoid !important; page-break-after:avoid !important;
+  break-after:avoid !important;
+  width:100% !important;
   background:#ffffff !important;
 }}
 
@@ -322,7 +324,9 @@ html, body {{
   clear:both !important; font-family:Arial,sans-serif !important;
   border-left:2px solid #c8102e !important; padding:3px 8px !important;
   border-top:none !important; border-right:none !important; border-bottom:none !important;
-  page-break-inside:avoid !important; width:100% !important;
+  page-break-inside:avoid !important; page-break-after:avoid !important;
+  break-after:avoid !important;
+  width:100% !important;
   background:#ffffff !important;
 }}
 
@@ -331,6 +335,7 @@ html, body {{
   width:100% !important; border-collapse:collapse !important;
   font-size:8.5pt !important; margin-bottom:10px !important;
   clear:both !important; background:#ffffff !important;
+  page-break-after:avoid !important; break-after:avoid !important;
 }}
 .cs-table th {{
   border:1px solid #dddddd !important; background:#f5f5f5 !important;
