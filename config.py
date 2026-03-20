@@ -29,17 +29,17 @@ PRODUCTS_DB_FILE    = os.path.join(BASE_DIR, "data", "products_db.json")
 GITHUB_RAW_BASE  = "https://raw.githubusercontent.com/jitu0426/Hem-Export-Catalogue/main/"
 CASE_SIZE_PATH   = f"{GITHUB_RAW_BASE}Case%20Size.xlsx"
 # ── Update these with your ImageKit.io URLs after uploading ─────────────────
-COVER_IMAGE_URL  = ""   # e.g. https://ik.imagekit.io/your_id/Cover_page_3_1.jpg
-JOURNEY_IMAGE_URL= ""   # e.g. https://ik.imagekit.io/your_id/JOURNEY2.jpg
+COVER_IMAGE_URL  = "https://ik.imagekit.io/tov7hy7nb/Cover%20Page.jpg?updatedAt=1773301119168"   # e.g. https://ik.imagekit.io/your_id/Cover_page_3_1.jpg
+JOURNEY_IMAGE_URL= "https://ik.imagekit.io/tov7hy7nb/JOURNEY2.jpeg"   # e.g. https://ik.imagekit.io/your_id/JOURNEY2.jpg
 
 # ── Catalogue-specific cover images ──────────────────────────────────────────
 # When ALL products in the cart belong to a single catalogue, use that cover.
 # Otherwise (HEM-only or mixed catalogues) → use the default COVER_IMAGE_URL.
 # Upload your cover images to ImageKit.io and update these URLs.
 CATALOGUE_COVER_URLS = {
-    "Sacred Elements Catalogue": "",   # ← paste Sacred Elements cover URL here
-    "Pooja Oil Catalogue":       "",   # ← paste Pooja Oil cover URL here
-    "Candle Catalogue":          "",   # ← paste Candle cover URL here
+    "Sacred Elements Catalogue": "https://ik.imagekit.io/tov7hy7nb/Gemini_Generated_Image_jnorezjnorezjnor.png",   # ← paste Sacred Elements cover URL here
+    "Pooja Oil Catalogue":       "https://ik.imagekit.io/tov7hy7nb/Gemini_Generated_Image_oiwlodoiwlodoiwl.png",   # ← paste Pooja Oil cover URL here
+    "Candle Catalogue":          "https://ik.imagekit.io/tov7hy7nb/Gemini_Generated_Image_ajpj60ajpj60ajpj.png",   # ← paste Candle cover URL here
 }
 
 # ── Excel catalogue file paths ───────────────────────────────────────────────
