@@ -9,8 +9,8 @@ import logging
 import pandas as pd
 import streamlit as st
 
-from config import BASE_DIR, LOGO_PATH, CASE_SIZE_PATH
-from cloudinary_client import get_image_as_base64_str
+from config import BASE_DIR, LOGO_PATH, CASE_SIZE_PATH, CATALOGUE_COVER_URLS, COVER_IMAGE_URL
+from imagekit_client import get_image_as_base64_str
 from data_loader import load_data_cached
 from pdf_generator import generate_pdf_html, generate_excel_file, render_pdf
 from ui.components import section_header, gold_divider, empty_state
@@ -163,14 +163,22 @@ def _generate_files(products_df, client_name, selection_map):
         if col not in df.columns:
             df[col] = ""
 
-    # Sort products in the same order as original Excel catalogues
-    fresh_df     = load_data_cached(st.session_state.data_timestamp)
-    pid_to_order = {row["ProductID"]: i for i, row in fresh_df.iterrows()}
-    if "ProductID" in df.columns:
-        df["_order"] = df["ProductID"].map(pid_to_order).fillna(len(fresh_df))
-        df = df.sort_values("_order").drop(columns=["_order"])
+    # Sort products alphabetically by Catalogue → Category → ItemName
+    sort_cols = [c for c in ["Catalogue", "Category", "ItemName"] if c in df.columns]
+    if sort_cols:
+        df = df.sort_values(sort_cols, key=lambda s: s.str.lower())
 
     df["SerialNo"] = range(1, len(df) + 1)
+
+    # ── Detect catalogue for dynamic cover page ────────────────────────────
+    # If ALL products belong to one non-HEM catalogue → use that cover
+    # Otherwise (HEM-only or mixed) → use default cover
+    cart_catalogues = set(df["Catalogue"].dropna().unique()) if "Catalogue" in df.columns else set()
+    if len(cart_catalogues) == 1:
+        single_catalogue = cart_catalogues.pop()
+        cover_url = CATALOGUE_COVER_URLS.get(single_catalogue, "") or COVER_IMAGE_URL
+    else:
+        cover_url = COVER_IMAGE_URL
 
     progress = st.progress(0, text="Starting…")
 
@@ -186,7 +194,7 @@ def _generate_files(products_df, client_name, selection_map):
     progress.progress(50, text="Rendering PDF (this may take 30–60 seconds)…")
     try:
         logo_b64 = get_image_as_base64_str(LOGO_PATH, resize=True, max_size=(200, 100))
-        html     = generate_pdf_html(df, client_name, logo_b64, selection_map)
+        html     = generate_pdf_html(df, client_name, logo_b64, selection_map, cover_url=cover_url)
         progress.progress(80, text="Finalising PDF…")
         pdf_bytes, engine_or_err = render_pdf(html)
         if pdf_bytes:

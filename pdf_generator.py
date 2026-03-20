@@ -28,7 +28,7 @@ import pandas as pd
 import streamlit as st
 
 from config import BASE_DIR, LOGO_PATH, STORY_IMG_1_PATH, COVER_IMAGE_URL, JOURNEY_IMAGE_URL
-from cloudinary_client import get_image_as_base64_str
+from imagekit_client import get_image_as_base64_str
 from data_loader import create_safe_id
 
 logger = logging.getLogger(__name__)
@@ -222,8 +222,10 @@ def generate_table_of_contents_html(df_sorted: pd.DataFrame) -> str:
 # FULL PDF HTML BUILDER
 # ═════════════════════════════════════════════════════════════════════════
 def generate_pdf_html(df_sorted: pd.DataFrame, customer_name: str,
-                      logo_b64: str, case_selection_map: dict) -> str:
-    """Assemble complete HTML — Cover → Story → TOC → Product pages. Plain white only."""
+                      logo_b64: str, case_selection_map: dict,
+                      cover_url: str = "") -> str:
+    """Assemble complete HTML — Cover → Story → TOC → Product pages. Plain white only.
+    cover_url: optional override for the cover image (catalogue-specific covers)."""
 
     def load_img(fname, specific=None, resize=False, max_size=(500, 500)):
         paths = []
@@ -238,8 +240,9 @@ def generate_pdf_html(df_sorted: pd.DataFrame, customer_name: str,
                 return get_image_as_base64_str(p, resize=resize, max_size=max_size)
         return ""
 
-    # Load images
-    cover_b64     = get_image_as_base64_str(COVER_IMAGE_URL) or load_img("cover page.png")
+    # Load images — use dynamic cover_url if provided, else default
+    actual_cover_url = cover_url or COVER_IMAGE_URL
+    cover_b64     = get_image_as_base64_str(actual_cover_url) or load_img("cover page.png")
     story_b64     = get_image_as_base64_str(JOURNEY_IMAGE_URL, max_size=(600, 600)) or \
                     load_img("image-journey.png", specific=STORY_IMG_1_PATH,
                              resize=True, max_size=(600, 600))
@@ -428,6 +431,76 @@ h1.cat-heading + .cat-block {{
 
     # Story page
     html_parts.append(generate_story_html(story_b64))
+
+    # Note page (after intro, before index)
+    html_parts.append("""
+    <div style="page-break-after:always !important;padding:60px 50px !important;
+                font-family:Arial,sans-serif !important;
+                background:#ffffff !important;color:#222222 !important;">
+      <h1 style="text-align:center !important;color:#c8102e !important;
+                 font-size:22pt !important;margin-bottom:30px !important;
+                 letter-spacing:2px !important;text-transform:uppercase !important;
+                 background:#ffffff !important;">How to Use This Catalogue</h1>
+      <div style="height:1px !important;background:#dddddd !important;
+                  margin-bottom:30px !important;width:60% !important;margin-left:auto !important;
+                  margin-right:auto !important;"></div>
+      <div style="max-width:500px !important;margin:0 auto !important;
+                  background:#ffffff !important;">
+        <div style="margin-bottom:28px !important;padding:18px !important;
+                    border:1px solid #e0e0e0 !important;border-radius:6px !important;
+                    background:#ffffff !important;">
+          <p style="font-size:12pt !important;color:#c8102e !important;
+                    font-weight:bold !important;margin:0 0 8px !important;
+                    background:#ffffff !important;">
+            &#9758; Clickable Index</p>
+          <p style="font-size:10.5pt !important;line-height:1.7 !important;
+                    color:#333333 !important;margin:0 !important;
+                    background:#ffffff !important;">
+            The <strong>Table of Contents</strong> on the next page is fully interactive.
+            Click on any category card to jump directly to that product section.</p>
+        </div>
+        <div style="margin-bottom:28px !important;padding:18px !important;
+                    border:1px solid #e0e0e0 !important;border-radius:6px !important;
+                    background:#ffffff !important;">
+          <p style="font-size:12pt !important;color:#c8102e !important;
+                    font-weight:bold !important;margin:0 0 8px !important;
+                    background:#ffffff !important;">
+            &#8593; Back to Index</p>
+          <p style="font-size:10.5pt !important;line-height:1.7 !important;
+                    color:#333333 !important;margin:0 !important;
+                    background:#ffffff !important;">
+            At the top-right corner of every category heading, you will find an
+            <strong style="color:#888888 !important;background:#ffffff !important;">
+            INDEX &uarr;</strong> link. Click it to return to the Table of Contents
+            at any time.</p>
+        </div>
+        <div style="margin-bottom:28px !important;padding:18px !important;
+                    border:1px solid #e0e0e0 !important;border-radius:6px !important;
+                    background:#ffffff !important;">
+          <p style="font-size:12pt !important;color:#c8102e !important;
+                    font-weight:bold !important;margin:0 0 8px !important;
+                    background:#ffffff !important;">
+            &#9733; New Products</p>
+          <p style="font-size:10.5pt !important;line-height:1.7 !important;
+                    color:#333333 !important;margin:0 !important;
+                    background:#ffffff !important;">
+            Products marked with a <span style="background:#c8102e !important;
+            color:#ffffff !important;font-size:8pt !important;padding:1px 6px !important;
+            border-radius:2px !important;font-weight:bold !important;">NEW</span>
+            badge are our latest additions to the collection.</p>
+        </div>
+      </div>
+      <div style="height:1px !important;background:#dddddd !important;
+                  margin-top:30px !important;width:60% !important;margin-left:auto !important;
+                  margin-right:auto !important;"></div>
+      <p style="text-align:center !important;font-size:10pt !important;
+                color:#888888 !important;margin-top:20px !important;
+                font-style:italic !important;background:#ffffff !important;">
+        Best viewed in a PDF reader with navigation support (Adobe Acrobat, Chrome, Edge).
+      </p>
+    </div>
+    """)
+
     # Table of Contents
     html_parts.append(generate_table_of_contents_html(df_sorted))
     # Open catalogue content wrapper
@@ -494,7 +567,11 @@ h1.cat-heading + .cat-block {{
                 length  = fuzzy_get(row_data, ["Length"])
                 breadth = fuzzy_get(row_data, ["Breadth", "Width"])
                 height  = fuzzy_get(row_data, ["Height"])
-                cbm     = fuzzy_get(row_data, ["CBM"])
+                cbm_raw = fuzzy_get(row_data, ["CBM"])
+                try:
+                    cbm = f"{float(cbm_raw):.2f}"
+                except (ValueError, TypeError):
+                    cbm = cbm_raw
                 html_parts.append(
                     f'<table class="cs-table"><tr>'
                     f'<th>Packing/Ctn</th><th>Gross Wt (Kg)</th><th>Net Wt (Kg)</th>'
@@ -537,7 +614,8 @@ h1.cat-heading + .cat-block {{
           <div class="card-img">{img_html}</div>
           <div class="card-info">
             <div class="card-name" style="font-size:{fs} !important;">
-              <span style="color:#888888 !important;margin-right:2px !important;
+              <span style="color:#999999 !important;margin-right:2px !important;
+                           font-size:7pt !important;font-weight:normal !important;
                            background:#ffffff !important;">{index+1}.</span>{name}
             </div>
           </div>
@@ -571,7 +649,7 @@ def generate_excel_file(df_sorted: pd.DataFrame, customer_name: str,
                     suffix = str(v).strip()
                 if "cbm" in k.lower():
                     try:
-                        cbm = round(float(v), 3)
+                        cbm = round(float(v), 2)
                     except Exception:
                         cbm = 0.0
             if suffix == "nan":
@@ -598,7 +676,7 @@ def generate_excel_file(df_sorted: pd.DataFrame, customer_name: str,
         hdr_fmt   = wb.add_format({"bold": True, "bg_color": "#c8102e",
                                     "font_color": "#ffffff", "border": 1})
         input_fmt = wb.add_format({"bg_color": "#FFFCB7", "border": 1, "locked": False})
-        lock_fmt  = wb.add_format({"border": 1, "locked": True, "num_format": "0.000"})
+        lock_fmt  = wb.add_format({"border": 1, "locked": True, "num_format": "0.00"})
         cnt_fmt   = wb.add_format({"num_format": "0.00", "bold": True, "border": 1})
         title_fmt = wb.add_format({"bold": True, "font_size": 14, "font_color": "#c8102e"})
 
@@ -608,7 +686,7 @@ def generate_excel_file(df_sorted: pd.DataFrame, customer_name: str,
         ws.write("B1", f"Order Sheet — {customer_name}", title_fmt)
         ws.write("B2", "Total CBM:")
         ws.write_formula("C2", f"=SUM(F9:F{len(df_xl)+9})",
-                         wb.add_format({"num_format": "0.000"}))
+                         wb.add_format({"num_format": "0.00"}))
 
         ws.write("B3", "CONTAINER TYPE", hdr_fmt)
         ws.write("C3", "ESTIMATED CONTAINERS", hdr_fmt)

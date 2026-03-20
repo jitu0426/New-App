@@ -1,6 +1,6 @@
 """
 HEM Product Catalogue - Data Loader Module
-Excel loading, Cloudinary image matching, and cached data pipeline.
+Excel loading, ImageKit.io image matching, and cached data pipeline.
 """
 import hashlib
 import logging
@@ -11,8 +11,8 @@ import streamlit as st
 from config import (
     CATALOGUE_PATHS, GLOBAL_COLUMN_MAPPING, REQUIRED_OUTPUT_COLS,
 )
-from cloudinary_client import (
-    get_image_as_base64_str, fetch_all_cloudinary_resources,
+from imagekit_client import (
+    get_image_as_base64_str, fetch_all_imagekit_resources,
     batch_download_images,
 )
 from database import load_products_db
@@ -65,7 +65,7 @@ def create_safe_id(text):
 
 @st.cache_data(show_spinner="Syncing Data (Smart Match v5 + Persistent DB)...")
 def load_data_cached(_dummy_timestamp):
-    """Load all product data from Excel files, Cloudinary images, and custom products.
+    """Load all product data from Excel files, ImageKit.io images, and custom products.
 
     Uses Streamlit cache; pass a changing timestamp to bust the cache.
     The underscore prefix on _dummy_timestamp tells Streamlit not to hash it.
@@ -73,24 +73,24 @@ def load_data_cached(_dummy_timestamp):
     all_data = []
     required_output_cols = REQUIRED_OUTPUT_COLS
 
-    # --- A. CLOUDINARY IMAGE INDEXING ---
-    cloudinary_map = {}
+    # --- A. IMAGEKIT IMAGE INDEXING ---
+    imagekit_map = {}
     filename_map = {}
     debug_log = ["--- SYNC START ---"]
 
     try:
-        resources = fetch_all_cloudinary_resources()
+        resources = fetch_all_imagekit_resources()
         for res in resources:
             public_id = res['public_id']
             url = res['secure_url']
             full_key = clean_key(public_id)
-            cloudinary_map[full_key] = url
+            imagekit_map[full_key] = url
             f_name = public_id.split('/')[-1]
             file_key = clean_key(f_name)
             if file_key not in filename_map:
                 filename_map[file_key] = url
     except Exception as e:
-        st.warning(f"Cloudinary Warning: {e}")
+        st.warning(f"ImageKit Warning: {e}")
 
     # --- B. LOAD PRODUCTS DATABASE ---
     db = load_products_db()
@@ -152,9 +152,9 @@ def load_data_cached(_dummy_timestamp):
                             if field in df.columns:
                                 df.loc[mask, field] = value
 
-            # CLOUDINARY IMAGE MATCHING — collect URLs first, download in parallel later
+            # IMAGEKIT IMAGE MATCHING — collect URLs first, download in parallel later
             index_to_url = {}
-            if cloudinary_map:
+            if imagekit_map:
                 for index, row in df.iterrows():
                     cat = clean_key(str(row.get('Catalogue', '')))
                     category = clean_key(str(row.get('Category', '')))
@@ -167,11 +167,11 @@ def load_data_cached(_dummy_timestamp):
                     key_2 = category + item
                     key_3 = item
 
-                    if key_1 in cloudinary_map:
-                        found_url = cloudinary_map[key_1]
+                    if key_1 in imagekit_map:
+                        found_url = imagekit_map[key_1]
                         match_type = "Exact Path"
-                    elif key_2 in cloudinary_map:
-                        found_url = cloudinary_map[key_2]
+                    elif key_2 in imagekit_map:
+                        found_url = imagekit_map[key_2]
                         match_type = "Category Path"
                     elif key_3 in filename_map:
                         found_url = filename_map[key_3]
@@ -197,9 +197,24 @@ def load_data_cached(_dummy_timestamp):
                         )
 
                     if found_url:
-                        optimized_url = found_url.replace(
-                            "/upload/", "/upload/w_400,q_auto/"
-                        )
+                        # Apply ImageKit.io URL-based transformation for width & quality
+                        if "ik.imagekit.io" in found_url and "/tr:" not in found_url:
+                            # Insert transformation before the file path
+                            parts = found_url.split("ik.imagekit.io/", 1)
+                            if len(parts) == 2:
+                                after = parts[1]
+                                # after = "imagekit_id/path/to/file.jpg"
+                                slash_idx = after.find("/")
+                                if slash_idx != -1:
+                                    ik_id = after[:slash_idx]
+                                    file_path = after[slash_idx:]
+                                    optimized_url = f"{parts[0]}ik.imagekit.io/{ik_id}/tr:w-400,q-80{file_path}"
+                                else:
+                                    optimized_url = found_url
+                            else:
+                                optimized_url = found_url
+                        else:
+                            optimized_url = found_url
                         index_to_url[index] = optimized_url
 
             # BATCH DOWNLOAD all matched images in parallel (16 threads)

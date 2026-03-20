@@ -7,9 +7,9 @@ Architecture:
   app.py              → bootstraps services, layout, tabs
   config.py           → all paths & constants
   styles.py           → full luxury dark-gold CSS
-  cloudinary_client.py→ Cloudinary SDK (images, DB backup)
+  imagekit_client.py  → ImageKit.io (images, uploads)
   database.py         → JSON DB (cart, overrides, custom products)
-  data_loader.py      → Excel + Cloudinary image pipeline
+  data_loader.py      → Excel + ImageKit.io image pipeline
   cart.py             → cart add / remove / clear helpers
   pdf_generator.py    → PDF (WeasyPrint/pdfkit) + Excel export
   ui/sidebar.py       → sidebar: templates, sync, info
@@ -42,15 +42,15 @@ st.set_page_config(
 
 # ── Remaining imports ─────────────────────────────────────────────────────
 from styles import APP_CSS
-from cloudinary_client import init_cloudinary
+from imagekit_client import init_imagekit
 from database import load_cart_from_db, migrate_old_custom_items
 from data_loader import load_data_cached
 
 # ── Inject CSS ────────────────────────────────────────────────────────────
 st.markdown(APP_CSS, unsafe_allow_html=True)
 
-# ── Initialize Cloudinary SDK ─────────────────────────────────────────────
-init_cloudinary()
+# ── Initialize ImageKit.io ────────────────────────────────────────────────
+init_imagekit()
 
 # ── Session-state defaults (survive reruns within one browser session) ────
 _defaults = {

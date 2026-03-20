@@ -12,11 +12,7 @@ from datetime import datetime
 import streamlit as st
 
 from config import PRODUCTS_DB_FILE, CUSTOM_ITEMS_FILE, SAVED_TEMPLATES_FILE
-from cloudinary_client import (
-    download_db_from_cloudinary, upload_db_to_cloudinary,
-    download_templates_from_cloudinary, upload_templates_to_cloudinary,
-    upload_custom_image,
-)
+from imagekit_client import upload_custom_image
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +40,7 @@ _DB_CACHE_KEY = "_products_db_cache"
 
 
 def _load_from_disk_or_cloud():
-    """Load DB from disk, falling back to Cloudinary, then empty default."""
+    """Load DB from disk, then empty default."""
     # Try local file first
     if os.path.exists(PRODUCTS_DB_FILE):
         try:
@@ -59,13 +55,6 @@ def _load_from_disk_or_cloud():
             return db
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Failed to load local DB: {e}")
-
-    # Fallback: try Cloudinary backup
-    cloud_db = download_db_from_cloudinary()
-    if cloud_db:
-        _write_to_disk(cloud_db)
-        logger.info("Database restored from Cloudinary backup")
-        return cloud_db
 
     logger.info("Starting with empty database")
     return get_empty_products_db()
@@ -89,11 +78,10 @@ def load_products_db():
 
 
 def save_products_db(db):
-    """Save the products database to disk + Cloudinary, update cache."""
+    """Save the products database to disk, update cache."""
     db["last_updated"] = datetime.now().isoformat()
     try:
         _write_to_disk(db)
-        upload_db_to_cloudinary(db)
         # Update the in-memory cache
         st.session_state[_DB_CACHE_KEY] = db
     except Exception as e:
@@ -229,7 +217,7 @@ def load_cart_from_db():
 # =========================================================================
 
 def load_saved_templates():
-    """Load saved cart templates from disk or Cloudinary."""
+    """Load saved cart templates from disk."""
     if os.path.exists(SAVED_TEMPLATES_FILE):
         try:
             with open(SAVED_TEMPLATES_FILE, 'r') as f:
@@ -237,25 +225,16 @@ def load_saved_templates():
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Failed to load local templates: {e}")
 
-    cloud_templates = download_templates_from_cloudinary()
-    if cloud_templates:
-        try:
-            with open(SAVED_TEMPLATES_FILE, 'w') as f:
-                json.dump(cloud_templates, f, indent=4)
-        except OSError:
-            pass
-        return cloud_templates
     return {}
 
 
 def save_template_to_disk(name, cart_items):
-    """Save a named template and backup to Cloudinary."""
+    """Save a named template to disk."""
     templates = load_saved_templates()
     templates[name] = cart_items
     try:
         with open(SAVED_TEMPLATES_FILE, 'w') as f:
             json.dump(templates, f, indent=4)
-        upload_templates_to_cloudinary()
         st.toast(f"Template '{name}' saved!", icon="\U0001f4be")
     except Exception as e:
         logger.error(f"Failed to save template: {e}")
@@ -270,7 +249,6 @@ def delete_template(name):
         try:
             with open(SAVED_TEMPLATES_FILE, 'w') as f:
                 json.dump(templates, f, indent=4)
-            upload_templates_to_cloudinary()
             st.toast(f"Template '{name}' deleted!", icon="\U0001f5d1\ufe0f")
         except Exception as e:
             logger.error(f"Failed to delete template: {e}")

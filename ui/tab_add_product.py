@@ -130,7 +130,7 @@ def render_add_product_tab(products_df) -> None:
 
                 st.success(
                     f"✅ '{new_item_name}' added! (ID: {added['ProductID']})\n\n"
-                    f"Click **Refresh Cloudinary & Excel** in the sidebar to see it in the list."
+                    f"Click **Refresh Images & Excel** in the sidebar to see it in the list."
                 )
 
     gold_divider()

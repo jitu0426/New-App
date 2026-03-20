@@ -10,7 +10,7 @@ from database import (
     load_products_db,
 )
 from cart import clear_cart
-from cloudinary_client import fetch_all_cloudinary_resources
+from imagekit_client import fetch_all_imagekit_resources
 
 
 def render_sidebar() -> None:
@@ -55,7 +55,7 @@ def render_sidebar() -> None:
 
         # ── Data sync ─────────────────────────────────────────────────────
         st.markdown("### 🔄 Data Sync")
-        if st.button("Refresh Cloudinary & Excel", use_container_width=True):
+        if st.button("Refresh Images & Excel", use_container_width=True):
             st.cache_data.clear()
             st.session_state.data_timestamp = time.time()
             st.session_state.gen_pdf_bytes  = None

@@ -7,11 +7,11 @@ import os
 # ── Base directory (folder this file lives in) ──────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ── Cloudinary credentials (set these in Streamlit Cloud → Secrets) ─────────
+# ── ImageKit.io credentials (set these in Streamlit Cloud → Secrets) ────────
 # Locally you can put them in a .env file or system environment variables.
-CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "dnoepbfbr")
-CLOUDINARY_API_KEY    = os.environ.get("CLOUDINARY_API_KEY",    "393756212248257")
-CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "66zA0Je4c0SKqaDcbCglsxPpYGI")
+IMAGEKIT_URL_ENDPOINT = os.environ.get("IMAGEKIT_URL_ENDPOINT", "https://ik.imagekit.io/tov7hy7nb/")       # e.g. https://ik.imagekit.io/your_id
+IMAGEKIT_PUBLIC_KEY   = os.environ.get("IMAGEKIT_PUBLIC_KEY",   "public_1JQ1CHYT064IsWvlfWoInjo2LWk=")       # your public key
+IMAGEKIT_PRIVATE_KEY  = os.environ.get("IMAGEKIT_PRIVATE_KEY",  "private_ZmZna8+ENuwze8tG9goU4Iny7NQ=")       # your private key
 
 # ── Local asset paths ────────────────────────────────────────────────────────
 LOGO_PATH          = os.path.join(BASE_DIR, "assets", "logo.png")
@@ -28,8 +28,19 @@ PRODUCTS_DB_FILE    = os.path.join(BASE_DIR, "data", "products_db.json")
 # ── Remote image / data URLs ─────────────────────────────────────────────────
 GITHUB_RAW_BASE  = "https://raw.githubusercontent.com/jitu0426/Hem-Export-Catalogue/main/"
 CASE_SIZE_PATH   = f"{GITHUB_RAW_BASE}Case%20Size.xlsx"
-COVER_IMAGE_URL  = "https://res.cloudinary.com/dnoepbfbr/image/upload/v1772175208/Cover_page_3_1.jpg"
-JOURNEY_IMAGE_URL= "https://res.cloudinary.com/dnoepbfbr/image/upload/v1772173751/JOURNEY2.jpg"
+# ── Update these with your ImageKit.io URLs after uploading ─────────────────
+COVER_IMAGE_URL  = ""   # e.g. https://ik.imagekit.io/your_id/Cover_page_3_1.jpg
+JOURNEY_IMAGE_URL= ""   # e.g. https://ik.imagekit.io/your_id/JOURNEY2.jpg
+
+# ── Catalogue-specific cover images ──────────────────────────────────────────
+# When ALL products in the cart belong to a single catalogue, use that cover.
+# Otherwise (HEM-only or mixed catalogues) → use the default COVER_IMAGE_URL.
+# Upload your cover images to ImageKit.io and update these URLs.
+CATALOGUE_COVER_URLS = {
+    "Sacred Elements Catalogue": "",   # ← paste Sacred Elements cover URL here
+    "Pooja Oil Catalogue":       "",   # ← paste Pooja Oil cover URL here
+    "Candle Catalogue":          "",   # ← paste Candle cover URL here
+}
 
 # ── Excel catalogue file paths ───────────────────────────────────────────────
 # Keys are the catalogue display names; values are local Excel file paths.
