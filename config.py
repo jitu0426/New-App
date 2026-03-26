@@ -39,7 +39,7 @@ JOURNEY_IMAGE_URL= "https://ik.imagekit.io/tov7hy7nb/JOURNEY2.jpeg"   # e.g. htt
 CATALOGUE_COVER_URLS = {
     "Sacred Elements Catalogue": "https://ik.imagekit.io/tov7hy7nb/Gemini_Generated_Image_jnorezjnorezjnor.png",   # ← paste Sacred Elements cover URL here
     "Pooja Oil Catalogue":       "https://ik.imagekit.io/tov7hy7nb/Pooja%20catalogue%20Front%20page.jpg?updatedAt=1774527941706",   # ← paste Pooja Oil cover URL here
-    "Candle Catalogue":          "https://ik.imagekit.io/tov7hy7nb/Candles%20catalogue%20CTC%20(1).jpg",   # ← paste Candle cover URL here
+    "Candle Catalogue":          "https://ik.imagekit.io/tov7hy7nb/Candles%20catalogue%20CTC%20(1).jpg?updatedAt=1774527941959",   # ← paste Candle cover URL here
 }
 
 # ── Excel catalogue file paths ───────────────────────────────────────────────
