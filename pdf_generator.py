@@ -227,24 +227,24 @@ def generate_pdf_html(df_sorted: pd.DataFrame, customer_name: str,
     """Assemble complete HTML — Cover → Story → TOC → Product pages. Plain white only.
     cover_url: optional override for the cover image (catalogue-specific covers)."""
 
-    # ── Fix ordering: within each Catalogue, sort "Precious" before "Non-Precious" ──
+    # ── Fix ordering: within each Catalogue+Category, sort "Precious" before "Non-Precious" ──
     def _precious_order(val):
         v = str(val).strip().lower()
         if v == "precious":
             return 0          # Precious first
         elif "non" in v:
             return 2          # Non-Precious last
-        return 1              # anything else in between
+        return 1              # anything else (assorted, display packs, etc.) in between
 
     df_sorted = df_sorted.copy()
-    df_sorted["_cat_order"] = df_sorted["Category"].apply(_precious_order)
+    df_sorted["_sub_order"] = df_sorted["Subcategory"].apply(_precious_order)
     df_sorted = (
         df_sorted
-        .sort_values(["Catalogue", "_cat_order"], kind="stable")
-        .drop(columns=["_cat_order"])
+        .sort_values(["Catalogue", "Category", "_sub_order"], kind="stable")
+        .drop(columns=["_sub_order"])
         .reset_index(drop=True)
     )
-    
+    # ─────────────────────────────────────────────────────────────────────
 
     def load_img(fname, specific=None, resize=False, max_size=(500, 500)):
         paths = []
