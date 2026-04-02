@@ -29,7 +29,7 @@ PRODUCTS_DB_FILE    = os.path.join(BASE_DIR, "data", "products_db.json")
 GITHUB_RAW_BASE  = "https://raw.githubusercontent.com/jitu0426/Hem-Export-Catalogue/main/"
 CASE_SIZE_PATH   = f"{GITHUB_RAW_BASE}Case%20Size.xlsx"
 # ── Update these with your ImageKit.io URLs after uploading ─────────────────
-COVER_IMAGE_URL  = "https://ik.imagekit.io/tov7hy7nb/Cover-page?updatedAt=1775127262656"   # e.g. https://ik.imagekit.io/your_id/Cover_page_3_1.jpg
+COVER_IMAGE_URL  = "https://ik.imagekit.io/tov7hy7nb/cover-page.jpg"   # e.g. https://ik.imagekit.io/your_id/Cover_page_3_1.jpg
 JOURNEY_IMAGE_URL= "https://ik.imagekit.io/tov7hy7nb/JOURNEY2.jpeg"   # e.g. https://ik.imagekit.io/your_id/JOURNEY2.jpg
 
 # ── Catalogue-specific cover images ──────────────────────────────────────────
