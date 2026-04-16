@@ -37,7 +37,7 @@ JOURNEY_IMAGE_URL= "https://ik.imagekit.io/tov7hy7nb/JOURNEY2.jpeg"   # e.g. htt
 # Otherwise (HEM-only or mixed catalogues) → use the default COVER_IMAGE_URL.
 # Upload your cover images to ImageKit.io and update these URLs.
 CATALOGUE_COVER_URLS = {
-    "Sacred Elements Catalogue": "https://ik.imagekit.io/tov7hy7nb/Gemini_Generated_Image_6jfnu36jfnu36jfn.png",   # ← paste Sacred Elements cover URL here
+    "Sacred Elements Catalogue": "https://ik.imagekit.io/tov7hy7nb/Sacred%20Elements%20cover%20page%201.jpg.jpeg?updatedAt=1776168616702",   # ← paste Sacred Elements cover URL here
     "Pooja Oil Catalogue":       "https://ik.imagekit.io/tov7hy7nb/Pooja%20catalogue%20Front%20page.jpg?updatedAt=1774527941706",   # ← paste Pooja Oil cover URL here
     "Candle Catalogue":          "https://ik.imagekit.io/tov7hy7nb/Candles%20catalogue%20CTC%20(1).jpg?updatedAt=1774527941959",   # ← paste Candle cover URL here
 }
