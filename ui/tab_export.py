@@ -84,12 +84,14 @@ def render_export_tab(products_df: pd.DataFrame) -> None:
                             full_case_df["Category"] == cat
                         ].copy()
                         if not options.empty:
+                            # ✅ REPLACE WITH THIS (fixed code)
                             options["_label"] = options.apply(
                                 lambda x: (
-                                    f"{x.get(suffix_col, '').strip()} "
-                                    f"(CBM: {x.get(cbm_col, '')})"
+                                    f"{str(x.get(suffix_col, '') or '').strip()} "
+                                    f"(CBM: {str(x.get(cbm_col, '') or '').strip()})"
                                 ),
                                 axis=1,
+
                             )
                             chosen = st.selectbox(
                                 f"📦 **{cat}**",
