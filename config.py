@@ -29,7 +29,7 @@ PRODUCTS_DB_FILE    = os.path.join(BASE_DIR, "data", "products_db.json")
 GITHUB_RAW_BASE  = "https://raw.githubusercontent.com/jitu0426/Hem-Export-Catalogue/main/"
 
 # ── Case Size Excel — loaded from New-App repo (always latest) ───────────────
-CASE_SIZE_PATH = "https://raw.githubusercontent.com/jitu0426/New-App/6947f42950670854b27cb5c9fe2a8d43dd3d13da/Case%20Size.xlsx"
+CASE_SIZE_PATH = "https://raw.githubusercontent.com/jitu0426/New-App/main/Case%20Size.xlsx""
                                                                    
 # ── Update these with your ImageKit.io URLs after uploading ─────────────────
 COVER_IMAGE_URL  = "https://ik.imagekit.io/tov7hy7nb/cover-page.jpg"   # e.g. https://ik.imagekit.io/your_id/Cover_page_3_1.jpg
