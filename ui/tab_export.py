@@ -2,20 +2,93 @@
 HEM Product Catalogue v3 — Tab 3: Export
 PDF catalogue + Excel order sheet generation with case-size selection.
 """
-import os
-import json
+import re
 import logging
 
 import pandas as pd
 import streamlit as st
 
-from config import BASE_DIR, LOGO_PATH, CASE_SIZE_PATH, CATALOGUE_COVER_URLS, COVER_IMAGE_URL
+from config import BASE_DIR, LOGO_PATH, CASE_SIZE_PATH, CATALOGUE_COVER_URLS, COVER_IMAGE_URL, CASE_SIZE_CATALOGUE_MAP
 from imagekit_client import get_image_as_base64_str
-from data_loader import load_data_cached
 from pdf_generator import generate_pdf_html, generate_excel_file, render_pdf
 from ui.components import section_header, gold_divider, empty_state
 
 logger = logging.getLogger(__name__)
+
+COLS = ["Catalogue", "Category", "Case Size Qty Per Carton",
+        "Gross Wt. Kg", "Net Wt. Kg", "Length Cm", "Breadth Cm", "Height Cm", "CBM"]
+
+
+def _norm(s: str) -> str:
+    """Normalize for matching: strip whitespace, remove non-ASCII, lowercase."""
+    return re.sub(r'\s+', ' ', s.encode("ascii", errors="ignore").decode().strip().lower())
+
+
+def _load_case_size() -> pd.DataFrame:
+    """
+    Parse the multi-section Case Size Excel into a single clean DataFrame.
+
+    File structure (repeats for each catalogue):
+        <Catalogue title row>   col[0] = catalogue name, col[2] blank
+        <Header row>            col[0] = "Category"
+        <Data rows>             col[0] = category, col[2] = case size qty
+
+    Returns a DataFrame with columns in COLS.
+    Only rows with a valid Category AND Case Size Qty are included.
+    """
+    try:
+        raw = pd.read_excel(CASE_SIZE_PATH, header=None, dtype=str)
+    except Exception as e:
+        logger.error(f"Cannot read Case Size Excel: {e}")
+        return pd.DataFrame(columns=COLS)
+
+    rows = []
+    current_catalogue = ""
+
+    for _, row in raw.iterrows():
+        col0 = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
+        col2 = str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else ""
+
+        if not col0:
+            continue
+
+        norm0 = _norm(col0)
+
+        # Catalogue title row → set current section
+        if norm0 in CASE_SIZE_CATALOGUE_MAP:
+            current_catalogue = CASE_SIZE_CATALOGUE_MAP[norm0]
+            continue
+
+        # Header row
+        if norm0 == "category":
+            continue
+
+        # Skip rows with no Case Size Qty (incomplete / spacer rows)
+        if not col2 or col2.lower() == "nan":
+            continue
+
+        # Clean category: strip whitespace + non-ASCII (\xa0 etc.)
+        clean_cat = col0.encode("ascii", errors="ignore").decode().strip()
+        if not clean_cat:
+            continue
+
+        def _val(idx):
+            v = str(row.iloc[idx]).strip() if len(row) > idx and pd.notna(row.iloc[idx]) else ""
+            return "" if v.lower() == "nan" else v
+
+        rows.append({
+            "Catalogue":                current_catalogue,
+            "Category":                 clean_cat,
+            "Case Size Qty Per Carton": col2,
+            "Gross Wt. Kg":             _val(3),
+            "Net Wt. Kg":               _val(4),
+            "Length Cm":                _val(5),
+            "Breadth Cm":               _val(6),
+            "Height Cm":                _val(7),
+            "CBM":                      _val(8),
+        })
+
+    return pd.DataFrame(rows, columns=COLS) if rows else pd.DataFrame(columns=COLS)
 
 
 def render_export_tab(products_df: pd.DataFrame) -> None:
@@ -34,75 +107,56 @@ def render_export_tab(products_df: pd.DataFrame) -> None:
         unsafe_allow_html=True,
     )
 
-    cart_categories = sorted({item["Category"] for item in st.session_state.cart})
+    # Unique (catalogue, category) pairs from cart
+    cart_items = sorted(
+        {(item.get("Catalogue", ""), item["Category"]) for item in st.session_state.cart}
+    )
 
-    # Load case-size data (from local DB first, then GitHub Excel)
-    full_case_df = pd.DataFrame()
-    local_db     = os.path.join(BASE_DIR, "data", "database.json")
-    if os.path.exists(local_db):
-        try:
-            with open(local_db) as f:
-                raw = json.load(f)
-            if raw.get("case_sizes"):
-                full_case_df = pd.DataFrame(raw["case_sizes"])
-        except Exception:
-            pass
-
-    if full_case_df.empty:
-        try:
-            full_case_df = pd.read_excel(CASE_SIZE_PATH, dtype=str)
-            full_case_df.columns = [c.strip() for c in full_case_df.columns]
-        except Exception as e:
-            st.error(f"Could not load Case Size data: {e}")
-
+    case_df = _load_case_size()
     selection_map: dict = {}
 
-    if not full_case_df.empty:
-        suffix_col = next(
-            (c for c in full_case_df.columns if "suffix" in c.lower()), None
-        )
-        cbm_col = next(
-            (c for c in full_case_df.columns if "cbm" in c.lower()), "CBM"
-        )
+    if case_df.empty:
+        st.error("Could not load Case Size data. Check that 'Case Size.xlsx' exists in the app folder.")
+    else:
+        # Build lookup: (norm_catalogue, norm_category) → list of row dicts
+        case_lookup: dict[tuple, list] = {}
+        for _, row in case_df.iterrows():
+            key = (_norm(row["Catalogue"]), _norm(row["Category"]))
+            case_lookup.setdefault(key, []).append(row.to_dict())
 
-        if not suffix_col:
-            st.error(
-                f"Cannot find 'Carton Suffix' column in Case Size file. "
-                f"Available columns: {full_case_df.columns.tolist()}"
-            )
-        else:
-            cols_per_row = 2
-            cat_chunks   = [
-                cart_categories[i:i+cols_per_row]
-                for i in range(0, len(cart_categories), cols_per_row)
-            ]
-            for chunk in cat_chunks:
-                cols = st.columns(len(chunk))
-                for col, cat in zip(cols, chunk):
-                    with col:
-                        options = full_case_df[
-                            full_case_df["Category"] == cat
-                        ].copy()
-                        if not options.empty:
-                            # ✅ REPLACE WITH THIS (fixed code)
-                            options["_label"] = options.apply(
-                                lambda x: (
-                                    f"{str(x.get(suffix_col, '') or '').strip()} "
-                                    f"(CBM: {str(x.get(cbm_col, '') or '').strip()})"
-                                ),
-                                axis=1,
+        cols_per_row = 2
+        chunks = [cart_items[i:i+cols_per_row] for i in range(0, len(cart_items), cols_per_row)]
 
-                            )
-                            chosen = st.selectbox(
-                                f"📦 **{cat}**",
-                                options["_label"].tolist(),
-                                key=f"case_{cat}",
-                            )
-                            selection_map[cat] = options[
-                                options["_label"] == chosen
-                            ].iloc[0].to_dict()
+        for chunk in chunks:
+            cols = st.columns(len(chunk))
+            for col, (catalogue, cat) in zip(cols, chunk):
+                with col:
+                    options = case_lookup.get((_norm(catalogue), _norm(cat)), [])
+
+                    if not options:
+                        st.warning(f"⚠️ No case sizes found for **{cat}**")
+                        continue
+
+                    # Build labels: "24 Doz  (CBM: 0.060)"
+                    labels = []
+                    for opt in options:
+                        qty = str(opt.get("Case Size Qty Per Carton", "")).strip()
+                        cbm = str(opt.get("CBM", "")).strip()
+                        if cbm:
+                            try:
+                                cbm = f"{float(cbm):.3f}"
+                            except ValueError:
+                                pass
+                            labels.append(f"{qty}  (CBM: {cbm})")
                         else:
-                            st.warning(f"No case sizes for: {cat}")
+                            labels.append(qty)
+
+                    chosen_label = st.selectbox(
+                        f"📦 **{cat}**",
+                        labels,
+                        key=f"case_{catalogue}_{cat}",
+                    )
+                    selection_map[cat] = options[labels.index(chosen_label)]
 
     gold_divider()
 
@@ -165,16 +219,12 @@ def _generate_files(products_df, client_name, selection_map):
         if col not in df.columns:
             df[col] = ""
 
-    # Sort products alphabetically by Catalogue → Category → ItemName
     sort_cols = [c for c in ["Catalogue", "Category", "ItemName"] if c in df.columns]
     if sort_cols:
         df = df.sort_values(sort_cols, key=lambda s: s.str.lower())
 
     df["SerialNo"] = range(1, len(df) + 1)
 
-    # ── Detect catalogue for dynamic cover page ────────────────────────────
-    # If ALL products belong to one non-HEM catalogue → use that cover
-    # Otherwise (HEM-only or mixed) → use default cover
     cart_catalogues = set(df["Catalogue"].dropna().unique()) if "Catalogue" in df.columns else set()
     if len(cart_catalogues) == 1:
         single_catalogue = cart_catalogues.pop()
@@ -184,7 +234,6 @@ def _generate_files(products_df, client_name, selection_map):
 
     progress = st.progress(0, text="Starting…")
 
-    # Generate Excel
     progress.progress(20, text="Building Excel order sheet…")
     try:
         st.session_state.gen_excel_bytes = generate_excel_file(df, client_name, selection_map)
@@ -192,7 +241,6 @@ def _generate_files(products_df, client_name, selection_map):
         st.error(f"Excel generation failed: {e}")
         st.session_state.gen_excel_bytes = None
 
-    # Generate PDF
     progress.progress(50, text="Rendering PDF (this may take 30–60 seconds)…")
     try:
         logo_b64 = get_image_as_base64_str(LOGO_PATH, resize=True, max_size=(200, 100))

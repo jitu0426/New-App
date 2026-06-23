@@ -587,7 +587,7 @@ h1.cat-heading + .cat-block {{
                         f'<strong style="color:#333333 !important;background:#ffffff !important;">'
                         f'Case Size:</strong> {desc}</p>'
                     )
-                packing = fuzzy_get(row_data, ["Packing", "Master Ctn"])
+                packing = fuzzy_get(row_data, ["Case Size Qty Per Carton", "Case Size", "Packing", "Qty Per Carton"])
                 gross   = fuzzy_get(row_data, ["Gross Wt", "Gross Weight"])
                 net     = fuzzy_get(row_data, ["Net Wt", "Net Weight"])
                 length  = fuzzy_get(row_data, ["Length"])
