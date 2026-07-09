@@ -230,6 +230,17 @@ def generate_pdf_html(df_sorted: pd.DataFrame, customer_name: str,
     """Assemble complete HTML — Cover → Story → TOC → Product pages. Plain white only.
     cover_url: optional override for the cover image (catalogue-specific covers)."""
 
+    # ── Fixed catalogue order in the PDF ─────────────────────────────────
+    CATALOGUE_ORDER = {
+        "hem product catalogue":     0,   # 1st — HEM
+        "sacred elements catalogue": 1,   # 2nd — Sacred Elements
+        "pooja oil catalogue":       2,   # 3rd — Pooja Oil
+        "candle catalogue":          3,   # 4th — Candle
+    }
+
+    def _catalogue_order(val):
+        return CATALOGUE_ORDER.get(str(val).strip().lower(), 99)
+
     # ── Fixed order for CONE subcategories ──────────────────────────────
     def _cone_sub_order(val):
         v = str(val).strip().lower()
@@ -244,11 +255,12 @@ def generate_pdf_html(df_sorted: pd.DataFrame, customer_name: str,
         return 1                              # anything unrecognised → with Non-Precious
 
     df_sorted = df_sorted.copy()
+    df_sorted["_cat_order"] = df_sorted["Catalogue"].apply(_catalogue_order)
     df_sorted["_sub_order"] = df_sorted["Subcategory"].apply(_cone_sub_order)
     df_sorted = (
         df_sorted
-        .sort_values(["Catalogue", "Category", "_sub_order"], kind="stable")
-        .drop(columns=["_sub_order"])
+        .sort_values(["_cat_order", "Catalogue", "Category", "_sub_order"], kind="stable")
+        .drop(columns=["_cat_order", "_sub_order"])
         .reset_index(drop=True)
     )
     # ────────────────────────────────────────────────────────────────────
